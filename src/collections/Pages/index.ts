@@ -1,18 +1,22 @@
 import type { CollectionConfig } from 'payload'
 
+import { slugField } from '@/fields/slug'
+import { hero } from '@/heros/config'
+import { adminsOrPublished } from '../../access/adminsOrPublished'
 import { authenticated } from '../../access/authenticated'
-import { authenticatedOrPublished } from '../../access/authenticatedOrPublished'
 import { Archive } from '../../blocks/ArchiveBlock/config'
 import { CallToAction } from '../../blocks/CallToAction/config'
 import { Content } from '../../blocks/Content/config'
 import { FormBlock } from '../../blocks/Form/config'
 import { MediaBlock } from '../../blocks/MediaBlock/config'
-import { hero } from '@/heros/config'
-import { slugField } from '@/fields/slug'
 import { populatePublishedAt } from '../../hooks/populatePublishedAt'
 import { generatePreviewPath } from '../../utilities/generatePreviewPath'
 import { revalidateDelete, revalidatePage } from './hooks/revalidatePage'
 
+import { Banner } from '@/blocks/Banner/config'
+// import { ImageCarousel } from '@/blocks/ImageCarousel/config'
+// import { SearchBlock } from '@/blocks/SearchBlock/config'
+// import { StackBlock } from '@/blocks/StackBlock/config'
 import {
   MetaDescriptionField,
   MetaImageField,
@@ -26,7 +30,7 @@ export const Pages: CollectionConfig<'pages'> = {
   access: {
     create: authenticated,
     delete: authenticated,
-    read: authenticatedOrPublished,
+    read: adminsOrPublished,
     update: authenticated,
   },
   // This config controls what's populated by default when a page is referenced
@@ -39,21 +43,23 @@ export const Pages: CollectionConfig<'pages'> = {
   admin: {
     defaultColumns: ['title', 'slug', 'updatedAt'],
     livePreview: {
-      url: ({ data, req }) => {
+      url: ({ data, req, locale }) => {
         const path = generatePreviewPath({
           slug: typeof data?.slug === 'string' ? data.slug : '',
           collection: 'pages',
           req,
+          locale: locale.code,
         })
 
         return path
       },
     },
-    preview: (data, { req }) =>
+    preview: (data, { req, locale }) =>
       generatePreviewPath({
         slug: typeof data?.slug === 'string' ? data.slug : '',
         collection: 'pages',
         req,
+        locale,
       }),
     useAsTitle: 'title',
   },
@@ -61,6 +67,7 @@ export const Pages: CollectionConfig<'pages'> = {
     {
       name: 'title',
       type: 'text',
+      localized: true,
       required: true,
     },
     {
@@ -75,7 +82,17 @@ export const Pages: CollectionConfig<'pages'> = {
             {
               name: 'layout',
               type: 'blocks',
-              blocks: [CallToAction, Content, MediaBlock, Archive, FormBlock],
+              blocks: [
+                CallToAction,
+                Content,
+                MediaBlock,
+                Archive,
+                FormBlock,
+                Banner,
+                // StackBlock,
+                // SearchBlock,
+                // ImageCarousel,
+              ],
               required: true,
               admin: {
                 initCollapsed: true,
@@ -125,7 +142,8 @@ export const Pages: CollectionConfig<'pages'> = {
   hooks: {
     afterChange: [revalidatePage],
     beforeChange: [populatePublishedAt],
-    afterDelete: [revalidateDelete],
+    // beforeDelete: [revalidateDelete],
+    // afterRead: [populateArchiveBlock, populateStackBlock],
   },
   versions: {
     drafts: {
